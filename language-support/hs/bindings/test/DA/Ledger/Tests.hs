@@ -135,9 +135,8 @@ tCreateWithoutKey withSandbox =
 tStakeholders :: WithSandbox -> Tasty.TestTree
 tStakeholders withSandbox =
     testCase "stakeholders are exposed correctly" $ do
-    withSandbox $ \sandbox -> do
+    withSandbox $ \sandbox pid -> do
         h <- connect sandbox
-        [pid,_,_] <- Ledger.listPackages h -- assume packageId is the 1st of the 3 listed packages.
         PastAndFuture{future=txs} <- Ledger.getTransactionsPF h alice
         let command = createIOU pid alice "alice-in-chains" 100
         _ <- submitCommand h alice command
