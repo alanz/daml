@@ -45,6 +45,7 @@ tests = testGroupWithSandbox "Haskell Ledger Bindings" [
     tSubmitGood,
     tCreateWithKey,
     tCreateWithoutKey,
+    tStakeholders,
     tListPackages,
     tGetPackage
     ]
@@ -128,6 +129,21 @@ tCreateWithoutKey withSandbox =
         _ <- submitCommand h alice command
         Just (Right Transaction{events=[CreatedEvent{key}]}) <- timeout 1 (takeStream txs)
         assertEqual "contract has no key" key Nothing
+        closeStream txs gone
+        where gone = Abnormal "client gone"
+
+tStakeholders :: WithSandbox -> Tasty.TestTree
+tStakeholders withSandbox =
+    testCase "stakeholders are exposed correctly" $ do
+    withSandbox $ \sandbox -> do
+        h <- connect sandbox
+        [pid,_,_] <- Ledger.listPackages h -- assume packageId is the 1st of the 3 listed packages.
+        PastAndFuture{future=txs} <- Ledger.getTransactionsPF h alice
+        let command = createIOU pid alice "alice-in-chains" 100
+        _ <- submitCommand h alice command
+        Just (Right Transaction{events=[CreatedEvent{signatories,observers}]}) <- timeout 1 (takeStream txs)
+        assertEqual "the only signatory" signatories [ alice ]
+        assertEqual "observers are empty" observers []
         closeStream txs gone
         where gone = Abnormal "client gone"
 
