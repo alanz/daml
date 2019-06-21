@@ -23,3 +23,6 @@ HEAD — ongoing
   also includes the protobuf-java library used as a dependency.
 - [Ledger API] Added additional Ledger API integration tests to Ledger API Test Tool.
 - [DAML Studio] Goto definition now works on the export list of modules.
+- [Navigator] Added support for SDK project configuration files. If you start Navigator with the SDK Assistant,
+  Navigator will directly read the ``daml.yaml`` config file instead of the old Navigator config file.
+  See `#1128 <https://github.com/digital-asset/daml/issues/1128>`__.
