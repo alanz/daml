@@ -79,6 +79,7 @@ object SandboxIndexAndWriteService {
         ledgerId,
         timeProvider,
         acs,
+        templateStore,
         ledgerEntries,
         queueDepth,
         startMode
@@ -95,7 +96,8 @@ object SandboxIndexAndWriteService {
       templateStore: InMemoryPackageStore)(
       implicit mat: Materializer,
       mm: MetricsManager): IndexAndWriteService = {
-    val ledger = Ledger.metered(Ledger.inMemory(ledgerId, timeProvider, acs, ledgerEntries))
+    val ledger =
+      Ledger.metered(Ledger.inMemory(ledgerId, timeProvider, acs, templateStore, ledgerEntries))
     createInstance(ledger, timeModel, timeProvider, templateStore)
   }
 
@@ -106,7 +108,7 @@ object SandboxIndexAndWriteService {
       templateStore: InMemoryPackageStore)(implicit mat: Materializer) = {
     val contractStore = new SandboxContractStore(ledger)
     val indexAndWriteService =
-      new SandboxIndexAndWriteService(ledger, timeModel, timeProvider, templateStore, contractStore)
+      new SandboxIndexAndWriteService(ledger, timeModel, timeProvider, contractStore)
     val heartbeats = scheduleHeartbeats(timeProvider, ledger.publishHeartbeat)
 
     new IndexAndWriteService {
@@ -149,7 +151,6 @@ private class SandboxIndexAndWriteService(
     ledger: Ledger,
     timeModel: TimeModel,
     timeProvider: TimeProvider,
-    packageStore: InMemoryPackageStore,
     contractStore: ContractStore)(implicit mat: Materializer)
     extends IndexService
     with WriteService {
@@ -370,19 +371,20 @@ private class SandboxIndexAndWriteService(
 
   // IndexPackagesService
   override def listLfPackages(): Future[Map[PackageId, PackageDetails]] =
-    packageStore.listLfPackages()
+    ledger.listLfPackages()
 
   override def getLfArchive(packageId: PackageId): Future[Option[Archive]] =
-    packageStore.getLfArchive(packageId)
+    ledger.getLfArchive(packageId)
 
   override def getLfPackage(packageId: PackageId): Future[Option[Ast.Package]] =
-    packageStore.getLfPackage(packageId)
+    ledger.getLfPackage(packageId)
 
   // PackageWriteService
   override def uploadDar(
       sourceDescription: String,
       payload: Array[Byte]): CompletionStage[UploadDarResult] =
-    packageStore.uploadDar(timeProvider.getCurrentTime, sourceDescription, payload)
+    FutureConverters.toJava(
+      ledger.uploadDar(timeProvider.getCurrentTime, sourceDescription, payload))
 
   // ContractStore
   override def lookupActiveContract(

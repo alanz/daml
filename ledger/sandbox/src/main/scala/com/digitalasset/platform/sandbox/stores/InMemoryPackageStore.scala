@@ -5,7 +5,6 @@ package com.digitalasset.platform.sandbox.stores
 
 import java.io.{File, FileOutputStream}
 import java.time.Instant
-import java.util.concurrent.{CompletableFuture, CompletionStage}
 import java.util.zip.ZipFile
 
 import com.daml.ledger.participant.state.index.v2.{IndexPackagesService, PackageDetails}
@@ -57,7 +56,7 @@ class InMemoryPackageStore() extends IndexPackagesService {
   def uploadDar(
       knownSince: Instant,
       sourceDescription: String,
-      packageBytes: Array[Byte]): CompletionStage[UploadDarResult] = this.synchronized {
+      packageBytes: Array[Byte]): Future[UploadDarResult] = this.synchronized {
     // TODO this should probably be asynchronous
     val file = File.createTempFile("put-package", ".dar")
     val result = bracket(Try(new FileOutputStream(file)))(fos => Try(fos.close()))
@@ -67,7 +66,7 @@ class InMemoryPackageStore() extends IndexPackagesService {
       .map { _ =>
         putDarFile(knownSince, sourceDescription, file)
       }
-    CompletableFuture.completedFuture(result match {
+    Future.successful(result match {
       case Success(Right(details @ _)) =>
         // TODO(FM) I'd like to include the details above but i get a strange error
         // about mismatching PackageId type
@@ -120,5 +119,5 @@ class InMemoryPackageStore() extends IndexPackagesService {
 }
 
 object InMemoryPackageStore {
-  def apply(): InMemoryPackageStore = new InMemoryPackageStore()
+  def empty: InMemoryPackageStore = new InMemoryPackageStore()
 }
