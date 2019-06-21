@@ -26,3 +26,9 @@ DAML Integration Kit
 ~~~~~~~~~~~~~~~~~~~~
 
 - Added additional Ledger API integration tests to Ledger API Test Tool.
+
+Java Bindings
+~~~~~~~~~~~~~
+
+- The artefact ``com.daml.ledger:bindings-java`` now has ``grpc-netty`` as dependency so that users don't need to explicitly add it.
+
